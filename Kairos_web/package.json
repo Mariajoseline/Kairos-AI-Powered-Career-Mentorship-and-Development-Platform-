@@ -1,29 +1,11 @@
 {
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^5.1.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
-  },
-  "name": "kairos-ai-powered-career-mentorship-and-development-platform-",
+  "name": "kairos-ai-platform",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Mariajoseline/Kairos-AI-Powered-Career-Mentorship-and-Development-Platform-.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Mariajoseline/Kairos-AI-Powered-Career-Mentorship-and-Development-Platform-/issues"
-  },
-  "homepage": "https://github.com/Mariajoseline/Kairos-AI-Powered-Career-Mentorship-and-Development-Platform-#readme"
+    "dev": "cd Kairos_web/backend && npm run dev",
+    "start": "cd Kairos_web/backend && npm start",
+    "client": "cd Kairos_web/frontend && npm start",
+    "init-db": "node --experimental-specifier-resolution=node database/initDb.js",
+    "install-all": "npm install && cd Kairos_web/backend && npm install && cd ../frontend && npm install"
+  }
 }

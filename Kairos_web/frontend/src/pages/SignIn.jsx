@@ -14,9 +14,8 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [apiStatus, setApiStatus] = useState('checking'); // 'checking', 'available', 'unavailable'
+  const [apiStatus, setApiStatus] = useState('checking');
 
-  // Check API availability on component mount
   useEffect(() => {
     const checkApiStatus = async () => {
       try {
@@ -54,7 +53,6 @@ const SignIn = () => {
     setError('');
 
     try {
-      // Validate inputs
       if (!formData.email || !formData.password) {
         throw new Error('Email and password are required');
       }
@@ -65,9 +63,7 @@ const SignIn = () => {
 
       const response = await fetch('http://localhost:5000/api/auth/signin', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password
@@ -80,7 +76,6 @@ const SignIn = () => {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Store based on remember me preference
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('user', JSON.stringify(data));
       
@@ -126,7 +121,7 @@ const SignIn = () => {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-kairos-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="john@example.com"
                   />
                 </div>
@@ -143,7 +138,7 @@ const SignIn = () => {
                       required
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-kairos-500 focus:border-transparent pr-10"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
                       placeholder="••••••••"
                     />
                     <button
@@ -151,11 +146,7 @@ const SignIn = () => {
                       onClick={togglePasswordVisibility}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
                 </div>
@@ -168,7 +159,7 @@ const SignIn = () => {
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="h-4 w-4 text-kairos-600 focus:ring-kairos-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600">
                       Remember me
@@ -176,7 +167,7 @@ const SignIn = () => {
                   </div>
                   
                   <div className="text-sm">
-                    <Link to="/forgot-password" className="text-kairos-600 hover:text-kairos-700">
+                    <Link to="/forgot-password" className="text-blue-600 hover:text-blue-700">
                       Forgot password?
                     </Link>
                   </div>
@@ -184,7 +175,7 @@ const SignIn = () => {
                 
                 <button
                   type="submit"
-                  className="w-full bg-kairos-600 hover:bg-kairos-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -204,7 +195,7 @@ const SignIn = () => {
               <div className="mt-6 text-center">
                 <p className="text-gray-600">
                   Don't have an account?{" "}
-                  <Link to="/signup" className="text-kairos-600 hover:text-kairos-700">
+                  <Link to="/signup" className="text-blue-600 hover:text-blue-700">
                     Sign Up
                   </Link>
                 </p>

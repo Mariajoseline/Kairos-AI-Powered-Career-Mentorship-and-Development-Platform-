@@ -18,9 +18,8 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [apiStatus, setApiStatus] = useState('checking'); // 'checking', 'available', 'unavailable'
+  const [apiStatus, setApiStatus] = useState('checking');
 
-  // Check API availability on component mount
   useEffect(() => {
     const checkApiStatus = async () => {
       try {
@@ -99,9 +98,7 @@ const SignUp = () => {
     try {
       const response = await fetch('http://localhost:5000/api/auth/check-email', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email })
       });
 
@@ -136,9 +133,7 @@ const SignUp = () => {
     try {
       const response = await fetch('http://localhost:5000/api/auth/signup', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
@@ -236,11 +231,7 @@ const SignUp = () => {
                           className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                           aria-label={showPassword ? "Hide password" : "Show password"}
                         >
-                          {showPassword ? (
-                            <EyeOff className="h-5 w-5" />
-                          ) : (
-                            <Eye className="h-5 w-5" />
-                          )}
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </button>
                       </div>
                     </div>

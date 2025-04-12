@@ -1,42 +1,12 @@
-import sequelize from './sequelize.js';
-import pool from './db.js';
+import { sequelize } from './sequelize.js';
 
-const checkConnections = async () => {
-  console.log('Checking database connections...');
-  
-  // Check Sequelize connection
+export const checkConnection = async () => {
   try {
     await sequelize.authenticate();
-    console.log('✅ Sequelize connection established successfully');
+    console.log('✅ MySQL connection established');
+    return true;
   } catch (error) {
-    console.error('❌ Sequelize connection error:', error.message);
+    console.error('❌ MySQL connection failed:', error);
+    throw error;
   }
-  
-  // Check MySQL connection
-  try {
-    const connection = await pool.getConnection();
-    console.log('✅ MySQL connection established successfully');
-    connection.release();
-  } catch (error) {
-    console.error('❌ MySQL connection error:', error.message);
-  }
-  
-  // Check database tables
-  try {
-    const [tables] = await pool.execute('SHOW TABLES');
-    console.log('📋 Database tables:');
-    if (tables.length === 0) {
-      console.log('   No tables found. Run "npm run init-db" to create tables.');
-    } else {
-      tables.forEach(table => {
-        console.log(`   - ${Object.values(table)[0]}`);
-      });
-    }
-  } catch (error) {
-    console.error('❌ Error checking tables:', error.message);
-  }
-  
-  process.exit(0);
 };
-
-checkConnections(); 

@@ -7,27 +7,27 @@ export const registerUserMySQL = async (userData) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    
+
     // Check if email already exists
     const [existingUsers] = await connection.execute(
       'SELECT id FROM users WHERE email = ?',
       [userData.email]
     );
-    
+
     if (existingUsers.length > 0) {
       throw new Error('Email already exists');
     }
-    
+
     const [userResult] = await connection.execute(
       'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
       [userData.name, userData.email, userData.password]
     );
-    
+
     await connection.execute(
       'INSERT INTO user_profiles (user_id, education, skills, goals) VALUES (?, ?, ?, ?)',
       [userResult.insertId, userData.education, userData.skills, userData.goals]
     );
-    
+
     await connection.commit();
     return userResult.insertId;
   } catch (error) {
@@ -44,7 +44,7 @@ export const loginUserMySQL = async (email) => {
       `SELECT users.id, users.name, users.email, users.password, 
        user_profiles.education, user_profiles.skills, user_profiles.goals
        FROM users LEFT JOIN user_profiles ON users.id = user_profiles.user_id
-       WHERE email = ?`,
+       WHERE users.email = ?`,
       [email]
     );
     return users[0];
@@ -63,11 +63,11 @@ export const registerUserSequelize = async (userData) => {
       where: { email: userData.email },
       transaction 
     });
-    
+
     if (existingUser) {
       throw new Error('Email already exists');
     }
-    
+
     const user = await User.create({
       name: userData.name,
       email: userData.email,
@@ -104,7 +104,7 @@ export const loginUserSequelize = async (email) => {
   }
 };
 
-// Default exports (switch between MySQL/Sequelize via environment variable)
+// Default exports (auto switch by environment variable)
 export const registerUser = process.env.DB_TYPE === 'sequelize' 
   ? registerUserSequelize 
   : registerUserMySQL;
