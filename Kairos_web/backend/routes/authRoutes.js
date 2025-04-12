@@ -1,12 +1,12 @@
 import express from 'express';
-import { checkEmailExists, registerUser, loginUser } from '../database/queries/authQueries.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { checkEmailExists, registerUser, loginUser } from '../database/queries/authQueries.js';
 
 const router = express.Router();
 
 // Email availability check
-router.post('/check-email', async (req, res) => {
+router.post('/check-email', async (req, res, next) => {
   try {
     const { email } = req.body;
     
@@ -17,13 +17,12 @@ router.post('/check-email', async (req, res) => {
     const exists = await checkEmailExists(email);
     res.json({ available: !exists });
   } catch (error) {
-    console.error('Email check error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error); // Pass to error handler
   }
 });
 
 // User registration
-router.post('/signup', async (req, res) => {
+router.post('/signup', async (req, res, next) => {
   try {
     const { name, email, password, education, skills, goals } = req.body;
     
@@ -32,15 +31,11 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Check if email exists
     if (await checkEmailExists(email)) {
       return res.status(400).json({ error: 'Email already exists' });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Create user
     const userId = await registerUser({
       name,
       email,
@@ -50,7 +45,6 @@ router.post('/signup', async (req, res) => {
       goals
     });
 
-    // Generate JWT
     const token = jwt.sign(
       { id: userId, email },
       process.env.JWT_SECRET,
@@ -67,13 +61,12 @@ router.post('/signup', async (req, res) => {
       goals
     });
   } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
 // User login
-router.post('/signin', async (req, res) => {
+router.post('/signin', async (req, res, next) => {
   try {
     const { email, password } = req.body;
     
@@ -82,12 +75,7 @@ router.post('/signin', async (req, res) => {
     }
 
     const user = await loginUser(email);
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -107,8 +95,7 @@ router.post('/signin', async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    next(error);
   }
 });
 
