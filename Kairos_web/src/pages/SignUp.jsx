@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Navbar from '../components/Navbar';
@@ -18,6 +18,27 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [apiStatus, setApiStatus] = useState('checking'); // 'checking', 'available', 'unavailable'
+
+  // Check API availability on component mount
+  useEffect(() => {
+    const checkApiStatus = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/health');
+        if (response.ok) {
+          setApiStatus('available');
+        } else {
+          setApiStatus('unavailable');
+          setError('Backend service is currently unavailable. Please try again later.');
+        }
+      } catch (err) {
+        setApiStatus('unavailable');
+        setError('Unable to connect to the server. Please check your internet connection.');
+      }
+    };
+
+    checkApiStatus();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,6 +89,11 @@ const SignUp = () => {
   const handleSubmitStep1 = async (e) => {
     e.preventDefault();
     if (!validateStep1()) return;
+    
+    if (apiStatus !== 'available') {
+      setError('Backend service is currently unavailable. Please try again later.');
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -85,7 +111,7 @@ const SignUp = () => {
       }
 
       const data = await response.json();
-      if (data.exists) {
+      if (!data.available) {
         throw new Error('Email already in use');
       }
 
@@ -100,6 +126,11 @@ const SignUp = () => {
   const handleSubmitStep2 = async (e) => {
     e.preventDefault();
     if (!validateStep2()) return;
+    
+    if (apiStatus !== 'available') {
+      setError('Backend service is currently unavailable. Please try again later.');
+      return;
+    }
 
     setIsLoading(true);
     try {

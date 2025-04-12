@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import Navbar from '../components/Navbar';
@@ -14,6 +14,27 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [apiStatus, setApiStatus] = useState('checking'); // 'checking', 'available', 'unavailable'
+
+  // Check API availability on component mount
+  useEffect(() => {
+    const checkApiStatus = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/health');
+        if (response.ok) {
+          setApiStatus('available');
+        } else {
+          setApiStatus('unavailable');
+          setError('Backend service is currently unavailable. Please try again later.');
+        }
+      } catch (err) {
+        setApiStatus('unavailable');
+        setError('Unable to connect to the server. Please check your internet connection.');
+      }
+    };
+
+    checkApiStatus();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,6 +44,12 @@ const SignIn = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (apiStatus !== 'available') {
+      setError('Backend service is currently unavailable. Please try again later.');
+      return;
+    }
+    
     setIsLoading(true);
     setError('');
 
@@ -30,6 +57,10 @@ const SignIn = () => {
       // Validate inputs
       if (!formData.email || !formData.password) {
         throw new Error('Email and password are required');
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        throw new Error('Please enter a valid email address');
       }
 
       const response = await fetch('http://localhost:5000/api/auth/signin', {
