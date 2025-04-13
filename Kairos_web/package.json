@@ -4,9 +4,10 @@
   "description": "Kairos AI-Powered Career Mentorship and Development Platform",
   "main": "index.js",
   "scripts": {
-    "start": "cd Kairos_web/backend && npm start",
-    "dev": "cd Kairos_web/backend && npm run dev",
-    "install-all": "npm install && cd Kairos_web/backend && npm install"
+    "start": "node server.js",                 
+    "dev": "nodemon server.js",                  
+    "frontend": "cd Kairos_web && npm start",   
+    "backend": "cd backend && npm start" 
   },
   "keywords": [
     "career",
