@@ -1,7 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Map, MessageCircle, LogOut, Menu, Send, Mic, MicOff } from 'lucide-react';
+import { sendMessage, transcribeAudio } from '../../services/chat';
+import { startInterview, uploadResume } from '../../services/interview';
 
 const Chatbot = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -11,37 +12,22 @@ const Chatbot = () => {
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
+  const [interviewMode, setInterviewMode] = useState(false);
   const endOfMessagesRef = useRef(null);
   
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const user = {
     name: 'John Doe',
     email: 'john@example.com',
     avatar: 'https://ui-avatars.com/api/?name=John+Doe&background=6366f1&color=fff'
   };
 
-  // Speech recognition setup
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = SpeechRecognition ? new SpeechRecognition() : null;
-  
-  if (recognition) {
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-  
-    recognition.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map(result => result[0])
-        .map(result => result.transcript)
-        .join('');
-      
-      setInput(transcript);
-    };
-  
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error', event.error);
-      setIsRecording(false);
-    };
-  }
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -49,67 +35,125 @@ const Chatbot = () => {
     setInput(e.target.value);
   };
 
-  const handleToggleRecording = () => {
-    if (!recognition) {
-      alert('Speech recognition is not supported in your browser.');
-      return;
-    }
-    
+  const handleToggleRecording = async () => {
     if (isRecording) {
-      recognition.stop();
+      // Stop recording
+      mediaRecorderRef.current.stop();
       setIsRecording(false);
     } else {
-      setInput('');
-      recognition.start();
-      setIsRecording(true);
+      // Start recording
+      try {
+        audioChunksRef.current = [];
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        
+        mediaRecorderRef.current.ondataavailable = (e) => {
+          audioChunksRef.current.push(e.data);
+        };
+        
+        mediaRecorderRef.current.onstop = async () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          try {
+            const response = await transcribeAudio(audioBlob);
+            setInput(response.data.text);
+          } catch (error) {
+            console.error('Transcription error:', error);
+            setMessages(prev => [...prev, { 
+              sender: 'bot', 
+              text: 'Sorry, I couldn\'t process your audio. Please try again.' 
+            }]);
+          }
+        };
+        
+        mediaRecorderRef.current.start();
+        setIsRecording(true);
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+        setMessages(prev => [...prev, { 
+          sender: 'bot', 
+          text: 'Microphone access denied. Please enable microphone permissions.' 
+        }]);
+      }
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
     
     // Add user message
     const userMessage = { sender: 'user', text: input };
-    setMessages(prevMessages => [...prevMessages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
     
-    // Simulate AI response (replace with actual API call in production)
-    setTimeout(() => {
-      let botResponse;
-      const lowercaseInput = input.toLowerCase();
+    try {
+      // Send to backend
+      const response = await sendMessage(input, conversationId);
       
-      if (lowercaseInput.includes('roadmap') || lowercaseInput.includes('path') || lowercaseInput.includes('career')) {
-        botResponse = { 
-          sender: 'bot', 
-          text: 'Based on your profile as a web developer, I recommend focusing on strengthening your JavaScript fundamentals and then diving deeper into React. Have you considered learning about state management with Redux or context API?' 
-        };
-      } else if (lowercaseInput.includes('skill') || lowercaseInput.includes('learn')) {
-        botResponse = { 
-          sender: 'bot', 
-          text: 'For your skill development, I recommend taking structured online courses and building projects to apply what you\'ve learned. Would you like me to suggest some specific resources for JavaScript and React?' 
-        };
-      } else {
-        botResponse = { 
-          sender: 'bot', 
-          text: 'That\'s a great question! Based on your profile, I\'d suggest focusing on building projects that showcase your skills while continuing to learn new technologies. Would you like more specific guidance on this topic?' 
-        };
-      }
-      
-      setMessages(prevMessages => [...prevMessages, botResponse]);
+      // Add bot response
+      const botResponse = { sender: 'bot', text: response.data.response };
+      setMessages(prev => [...prev, botResponse]);
+      setConversationId(response.data.conversation_id);
+    } catch (error) {
+      const errorMessage = { 
+        sender: 'bot', 
+        text: "Sorry, I encountered an error. Please try again." 
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
-  // Auto-scroll to the bottom of the chat
-  useEffect(() => {
-    endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const startInterviewSession = async (topic, difficulty = 'medium') => {
+    setIsLoading(true);
+    try {
+      const response = await startInterview(topic, difficulty);
+      setMessages([{ sender: 'bot', text: response.data.question }]);
+      setInterviewMode(true);
+      setConversationId(response.data.conversation_id);
+    } catch (error) {
+      setMessages(prev => [...prev, { 
+        sender: 'bot', 
+        text: "Failed to start interview. Please try again." 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await uploadResume(file);
+      setMessages(prev => [
+        ...prev,
+        { 
+          sender: 'bot', 
+          text: "I've analyzed your resume. Let's discuss your career path!" 
+        },
+        { 
+          sender: 'bot', 
+          text: `I found these skills: ${response.data.skills.join(', ')}` 
+        }
+      ]);
+    } catch (error) {
+      setMessages(prev => [...prev, { 
+        sender: 'bot', 
+        text: "Failed to process resume. Please try again." 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar for larger screens */}
+      {/* Sidebar */}
       <aside className={`bg-white shadow-lg fixed inset-y-0 left-0 z-30 w-64 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -229,6 +273,34 @@ const Chatbot = () => {
           
           {/* Input Area */}
           <div className="bg-white border-t border-gray-200 p-4">
+            {!interviewMode && (
+              <div className="max-w-3xl mx-auto mb-4">
+                <div className="flex space-x-2 overflow-x-auto pb-2">
+                  <button
+                    onClick={() => startInterviewSession('General Career', 'medium')}
+                    className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm whitespace-nowrap"
+                  >
+                    General Career Interview
+                  </button>
+                  <button
+                    onClick={() => startInterviewSession('Technical Skills', 'hard')}
+                    className="px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm whitespace-nowrap"
+                  >
+                    Technical Interview
+                  </button>
+                  <label className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm whitespace-nowrap cursor-pointer">
+                    Upload Resume
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.png"
+                      className="hidden"
+                      onChange={handleResumeUpload}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex items-center">
               <div className="relative flex-1">
                 <input
