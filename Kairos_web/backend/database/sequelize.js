@@ -10,9 +10,8 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST,
     dialect: 'mysql',
-    port: process.env.DB_PORT,
     pool: {
-      max: 10,
+      max: 5,
       min: 0,
       acquire: 30000,
       idle: 10000
@@ -21,14 +20,4 @@ const sequelize = new Sequelize(
   }
 );
 
-// Test connection
-(async () => {
-  try {
-    await sequelize.authenticate();
-    console.log('Sequelize connection established');
-  } catch (error) {
-    console.error('Sequelize connection error:', error);
-  }
-})();
-
-export default sequelize;
+export { sequelize };

@@ -1,23 +1,14 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
     "outDir": "./dist",
-    "noEmit": false,
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "isolatedModules": false
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.js",
-    "src/**/*.jsx",
-    "vite.config.js"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts",
-    "**/*.test.ts",
-    "**/*.stories.tsx"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }
